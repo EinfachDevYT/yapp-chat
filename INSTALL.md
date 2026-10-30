@@ -157,10 +157,8 @@ Erwartet: `{"valid":false,"reason":"bad_request",…}` – das ist **richtig**
 ### B1. Code holen
 
 ```bash
-git clone -b feature/accounts-login https://github.com/EinfachDevYT/yapp-chat /var/www/yapp-chat
+git clone https://github.com/EinfachDevYT/yapp-chat /var/www/yapp-chat
 ```
-
-> Sobald der Branch in `main` gemergt ist, `-b feature/accounts-login` weglassen.
 
 ### B2. Config anlegen
 
