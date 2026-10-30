@@ -9,8 +9,39 @@
   "theme_color": "#12111b",
   "lang": "de",
   "icons": [
-    { "src": "brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "brand/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "brand/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "brand/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "brand/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "./?app=nooky",
+  "shortcuts": [
+    {
+      "name": "Neuer Chat",
+      "url": "./?page=new",
+      "icons": [
+        {
+          "src": "brand/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

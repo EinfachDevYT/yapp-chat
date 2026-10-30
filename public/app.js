@@ -61,6 +61,110 @@
     return tick;
   }
 
+  // ---- App: Service Worker, Installation, Push -----------------------------
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  let swReg = null;
+  let installPrompt = null;
+
+  if ('serviceWorker' in navigator && csrf) {
+    navigator.serviceWorker.register('sw.js').then((r) => { swReg = r; initPush(); }).catch(() => initPush());
+  } else {
+    initPush();
+  }
+
+  // Android/Chrome: eigener Installieren-Knopf statt Browsermenü.
+  window.addEventListener('beforeinstallprompt', (ev) => {
+    ev.preventDefault();
+    installPrompt = ev;
+    showInstall();
+  });
+  window.addEventListener('appinstalled', () => { installPrompt = null; showInstall(); });
+
+  const installHint = document.getElementById('install-hint');
+  if (installHint && !standalone) installHint.hidden = false;
+
+  function showInstall() {
+    const sections = document.querySelectorAll('[data-os]');
+    if (!sections.length) return;
+    const which = standalone ? 'installed' : installPrompt ? 'prompt' : isIOS ? 'ios' : isAndroid ? 'android' : 'desktop';
+    sections.forEach((s) => { s.hidden = s.dataset.os !== which; });
+  }
+  showInstall();
+  const installBtn = document.getElementById('install-btn');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!installPrompt) return;
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      showInstall();
+    });
+  }
+
+  function b64ToBytes(s) {
+    const pad = '='.repeat((4 - (s.length % 4)) % 4);
+    const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  }
+
+  async function initPush() {
+    const status = document.getElementById('push-status');
+    if (!status) return;
+    const on = document.getElementById('push-on');
+    const off = document.getElementById('push-off');
+    const test = document.getElementById('push-test');
+    const say = (t, cls) => { status.textContent = t; status.className = 'small ' + (cls || 'muted'); };
+
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    if (!supported) {
+      if (isIOS && !standalone) return say('Auf dem iPhone gehen Benachrichtigungen erst, wenn nooky als App installiert ist (siehe oben). Danach hier einschalten.');
+      return say('Dieser Browser kann leider keine Benachrichtigungen.');
+    }
+    const reg = swReg || await navigator.serviceWorker.ready;
+
+    async function refreshUi() {
+      const sub = await reg.pushManager.getSubscription();
+      const perm = Notification.permission;
+      on.hidden = !!sub || perm === 'denied';
+      off.hidden = test.hidden = !sub;
+      if (perm === 'denied') say('Benachrichtigungen sind für nooky blockiert. Erlaube sie in den Einstellungen deines Handys bzw. Browsers und lade die Seite neu.', 'err');
+      else if (sub) say('✓ Benachrichtigungen sind auf diesem Gerät an.', 'ok');
+      else say('Auf diesem Gerät noch aus.');
+    }
+
+    on.addEventListener('click', async () => {
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') return refreshUi();
+        const { key } = await api('push_key');
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
+        const fd = new FormData(); fd.append('endpoint', sub.endpoint);
+        await api('subscribe', null, fd);
+      } catch (e) {
+        say('Einschalten hat nicht geklappt: ' + e.message, 'err');
+        return;
+      }
+      refreshUi();
+    });
+    off.addEventListener('click', async () => {
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        const fd = new FormData(); fd.append('endpoint', sub.endpoint);
+        try { await api('unsubscribe', null, fd); } catch (e) { /* trotzdem lokal abmelden */ }
+        await sub.unsubscribe();
+      }
+      refreshUi();
+    });
+    test.addEventListener('click', async () => {
+      try { await api('push_test', null, new FormData()); say('Test geschickt – gleich sollte eine Benachrichtigung kommen.', 'ok'); }
+      catch (e) { say(e.message, 'err'); }
+    });
+    refreshUi();
+  }
+
   // ---- Startseite: Chat-Liste live halten ---------------------------------
   const list = document.getElementById('chatlist');
   if (list) {
@@ -75,6 +179,8 @@
     const dot = document.querySelector('[data-unread]');
     if (dot) { dot.textContent = n; dot.hidden = !n; }
     document.title = (n ? `(${n}) ` : '') + document.title.replace(/^\(\d+\) /, '');
+    // Zahl am App-Icon (Android/iOS-Web-App, wo unterstützt)
+    if (navigator.setAppBadge) { try { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } catch (e) { /* egal */ } }
   }
 
   // ---- Chat-Ansicht --------------------------------------------------------

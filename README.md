@@ -90,6 +90,14 @@ Stündlicher Cron-Check (hält die Toleranz auch ohne Traffic frisch):
 - **Profil wie bei WhatsApp:** Profilbild (quadratisch zugeschnitten), Name, Info
   (max. 139 Zeichen, mit Vorschlägen wie „Verfügbar“, „In der Schule“), Info-Datum,
   „Dabei seit“. Andere Profile über den Namen im Chat.
+- **Handy-App (ohne Store):** nooky ist eine installierbare Web-App. Android/Chrome:
+  Knopf „App installieren“; iPhone: Safari → Teilen → „Zum Home-Bildschirm“. Anleitung
+  in der App unter Profil → App & Benachrichtigungen (`?page=app`). Ohne Netz zeigt
+  der Service Worker (`public/sw.js`) eine Offline-Seite.
+- **Push-Benachrichtigungen:** Web-Push mit VAPID (Schlüssel entsteht automatisch in
+  `data/vapid.json`). Der Push an Apple/Google ist leer – Absender und Text holt das
+  Handy direkt von nooky. Wer die App gerade offen hat, bekommt keinen Push.
+  iPhone: ab iOS 16.4 und nur, wenn nooky zum Home-Bildschirm hinzugefügt wurde.
 - **Lizenz:** Ohne gültige Lizenz zeigt der Chat eine Sperrseite (API: 503 JSON).
 
 ## Status
@@ -102,3 +110,4 @@ Stündlicher Cron-Check (hält die Toleranz auch ohne Traffic frisch):
 - [x] Profilbild, Info (Bio)
 - [x] nooky-Design, Logo, App-Icons
 - [x] Landing Page nooky.cc
+- [x] Handy-App (installierbare Web-App) + Push-Benachrichtigungen

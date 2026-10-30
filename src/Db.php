@@ -105,6 +105,20 @@ final class Db
         3 => <<<'SQL'
             ALTER TABLE users ADD COLUMN logged_out_at INTEGER;
             SQL,
+
+        // Push-Benachrichtigungen: ein Eintrag pro Gerät/Browser.
+        // active_at = letzte Abfrage aus einer offenen App (dann kein Push nötig).
+        4 => <<<'SQL'
+            CREATE TABLE push_subscriptions (
+                id         INTEGER PRIMARY KEY,
+                user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                endpoint   TEXT    NOT NULL UNIQUE,
+                created_at INTEGER NOT NULL,
+                last_ok_at INTEGER
+            );
+            CREATE INDEX idx_push_user ON push_subscriptions(user_id);
+            ALTER TABLE users ADD COLUMN active_at INTEGER;
+            SQL,
     ];
 
     public static function path(): string

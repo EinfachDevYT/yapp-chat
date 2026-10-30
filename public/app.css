@@ -276,3 +276,13 @@ th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: up
 .auth .brand-big span { font: 700 1.8rem/1 var(--display); letter-spacing: -.03em; }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* ---- App installieren / Benachrichtigungen ------------------------------- */
+.install-hint { display: flex; align-items: center; gap: 14px; text-decoration: none; border-color: var(--peach); }
+.install-hint svg { width: 28px; height: 28px; color: var(--peach); flex: none; }
+.install-hint span { display: flex; flex-direction: column; }
+#app-page h2 { display: flex; align-items: center; gap: 10px; }
+#app-page h2 svg { width: 22px; height: 22px; color: var(--peach); }
+.steps { margin: 0 0 8px; padding-left: 22px; display: grid; gap: 10px; }
+.kbd { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; white-space: nowrap; }
+.kbd svg { width: 16px; height: 16px; }

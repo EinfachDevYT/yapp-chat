@@ -30,6 +30,9 @@ final class View
         echo '<meta name="theme-color" content="#fbf7f3" media="(prefers-color-scheme: light)">';
         echo '<link rel="icon" href="brand/icon.svg" type="image/svg+xml"><link rel="icon" href="brand/icon-32.png" sizes="32x32">';
         echo '<link rel="apple-touch-icon" href="brand/icon-180.png"><link rel="manifest" href="manifest.webmanifest">';
+        // Als App vom Homescreen (iPhone/Android): Vollbild, eigener Name.
+        echo '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">';
+        echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="nooky">';
         echo '<link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>';
         echo '<link rel="stylesheet" href="app.css"><script src="app.js" defer></script>';
         echo '</head><body class="' . $e($opts['body'] ?? '') . '"' . (Auth::check() ? ' data-csrf="' . $e(Auth::csrfToken()) . '"' : '') . '>';
@@ -169,6 +172,11 @@ final class View
             'trash'  => '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
             'eyeoff' => '<path d="M3 3l18 18M10.6 6.1A9.6 9.6 0 0 1 12 6c5 0 9 6 9 6a15.6 15.6 0 0 1-3.2 3.8M6.2 7.6C4.2 9.1 3 12 3 12s4 6 9 6a8.7 8.7 0 0 0 3.6-.8"/>',
             'pencil' => '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+            'bell'   => '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+            'phone'  => '<rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/>',
+            'share'  => '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
+            'addbox' => '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>',
+            'dots'   => '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
             'tick'   => '<path d="M1 6l4 4 9-9"/>',
             'ticks'  => '<path d="M1 6l4 4 9-9M8 9l1 1 9-9"/>',
         ][$name] ?? '';
