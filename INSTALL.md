@@ -26,19 +26,20 @@ Key-Domain = Chat-Domain ◄───────► config.php  'domain'
 |---|---|
 | `license.nooky.cc` | Lizenzserver (Panel + Prüf-API) |
 | `chat.nooky.cc` | Chat |
+| `nooky.cc` | Landing Page „Invite only“ (Teil C) |
 
-Beide können auf denselben Server zeigen. Alle Befehle unten sind schon auf
+Alle drei können auf denselben Server zeigen. Alle Befehle unten sind schon auf
 diese Domains eingestellt.
 
 ---
 
 ## Teil 0: Vorbereitung (einmalig)
 
-**DNS:** Für beide Domains einen A-Record (und ggf. AAAA) auf die IP des
-Servers anlegen. Erst weitermachen, wenn beide auflösen:
+**DNS:** Für alle drei Domains einen A-Record (und ggf. AAAA) auf die IP des
+Servers anlegen. Erst weitermachen, wenn alle auflösen:
 
 ```bash
-getent hosts license.nooky.cc chat.nooky.cc
+getent hosts license.nooky.cc chat.nooky.cc nooky.cc
 ```
 
 **Pakete:**
@@ -274,7 +275,77 @@ echo '0 * * * * www-data php /var/www/nooky-chat/bin/license-check.php >/dev/nul
 `https://chat.nooky.cc` öffnen, mit dem Admin aus B4 anmelden, unter
 **Admin** die Accounts anlegen.
 
-✅ **Fertig.**
+✅ **Chat fertig.**
+
+---
+
+## Teil C: Landing Page (nooky.cc)
+
+Statische Seite aus `landing/` im Chat-Repo: kein PHP, keine Cookies,
+Schriften selbst gehostet. Sie sagt „Invite only“ und verlinkt auf den Chat.
+
+### C1. Impressum und Datenschutz ausfüllen
+
+In Deutschland Pflicht. Die pink markierten Platzhalter ersetzen:
+
+```bash
+nano /var/www/nooky-chat/landing/impressum.html
+```
+
+```bash
+nano /var/www/nooky-chat/landing/datenschutz.html
+```
+
+### C2. nginx
+
+```bash
+cat > /etc/nginx/sites-available/nooky-landing <<'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name nooky.cc;
+
+    root /var/www/nooky-chat/landing;
+    index index.html;
+
+    add_header Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /fonts/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+EOF
+```
+
+```bash
+ln -s /etc/nginx/sites-available/nooky-landing /etc/nginx/sites-enabled/
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### C3. HTTPS
+
+```bash
+certbot --nginx -d nooky.cc
+```
+
+`https://nooky.cc` zeigt jetzt die Landing Page, der Button führt zu
+`https://chat.nooky.cc`.
+
+✅ **Alles fertig.**
 
 ---
 

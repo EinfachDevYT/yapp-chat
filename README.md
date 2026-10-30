@@ -13,7 +13,8 @@ Design „nooky" (dark, Lime + Violett/Pink) für 14–25-Jährige.
 ## Aufbau
 
 ```
-public/   Document Root (index.php, app.css, app.js)
+public/   Document Root des Chats (index.php, app.css, app.js)
+landing/  Landing Page für nooky.cc (statisch, Impressum, Datenschutz)
 src/      Logik (Db, Auth, Users, License, bootstrap.php)
 bin/      CLI: setup.php (DB + erster Admin), license-check.php (Cron)
 data/     chat.sqlite + Uploads + Lizenz-Status (nicht im Repo)
