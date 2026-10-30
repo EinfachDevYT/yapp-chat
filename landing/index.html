@@ -5,31 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>nooky – invite only</title>
 <meta name="description" content="nooky ist ein privater Chat. Rein kommst du nur mit Einladung.">
-<meta name="theme-color" content="#0f0e13">
-<link rel="preload" href="fonts/bricolage-800.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="theme-color" content="#12111b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbf7f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="brand/icon.svg" type="image/svg+xml">
+<link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="brand/icon-180.png">
+<link rel="preload" href="fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><a class="mark" href="/">nooky<span>.cc</span></a></header>
+<header class="top">
+  <a class="brand" href="/" aria-label="nooky – Startseite">
+    <img src="brand/mark.svg" alt="" width="34" height="34">
+    <span>nooky</span>
+  </a>
+</header>
 
-<main>
-  <section>
-    <div class="pill">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+<main class="hero">
+  <section class="intro">
+    <p class="pill">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
       Invite only
-    </div>
-    <h1>Nur für<em>Eingeladene.</em></h1>
+    </p>
+    <h1>Nur für <em>Eingeladene.</em></h1>
     <p class="lead">Ein privater Chat. Keine Registrierung, keine Werbung. <strong>Rein kommst du nur, wenn dich jemand einlädt.</strong></p>
     <a class="cta" href="https://chat.nooky.cc">Ich hab schon einen Account <span aria-hidden="true">→</span></a>
     <p class="sub">Noch keinen? Frag die Person, die dir von nooky erzählt hat.</p>
   </section>
 
   <div class="phone" aria-hidden="true">
-    <div class="who"><div class="avatar"></div><div><b>Mia</b><small>online</small></div></div>
-    <div class="msg in">bist du schon bei nooky?</div>
-    <div class="msg out">nope, wie komm ich rein? <span class="tick">✓✓</span></div>
-    <div class="msg in">gar nicht 😌 nur mit invite</div>
-    <div class="msg in">ich frag mal für dich</div>
+    <div class="who">
+      <div class="avatar"><span>M</span><i></i></div>
+      <div><b>Mia</b><small>online</small></div>
+    </div>
+    <div class="chat">
+      <p class="day">heute</p>
+      <div class="msg in">bist du schon bei nooky?<time>22:41</time></div>
+      <div class="msg out">nope, wie komm ich rein?<time>22:42 <svg class="ticks" viewBox="0 0 20 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6.5 4.5 10 11 2"/><path d="M8.5 9.5 9 10l6.5-8"/></svg></time></div>
+      <div class="msg in">gar nicht 😌 nur mit invite</div>
+      <div class="msg in">ich frag mal für dich<time>22:43</time></div>
+      <div class="typing"><span></span><span></span><span></span></div>
+    </div>
+    <div class="composer"><span>Nachricht …</span><b></b></div>
   </div>
 </main>
 

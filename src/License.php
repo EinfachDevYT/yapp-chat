@@ -52,6 +52,20 @@ final class License
         // Fällig für eine Online-Prüfung?
         $due = !isset($state['last_check']) || ($now - (int) $state['last_check']) >= self::CHECK_INTERVAL;
 
+        // Nur ein Prozess fragt gleichzeitig beim Server nach; alle anderen
+        // nutzen solange den gespeicherten Stand (kein Ansturm zur vollen Stunde).
+        $lock = null;
+        if ($due) {
+            $lock = @fopen($this->dataDir . '/license.lock', 'c');
+            if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
+                $due = false;
+            } else {
+                // Inzwischen von einem anderen Prozess erledigt?
+                $state = $this->loadState();
+                $due   = !isset($state['last_check']) || ($now - (int) $state['last_check']) >= self::CHECK_INTERVAL;
+            }
+        }
+
         if ($due) {
             $resp = $this->callServer();
             $state['last_check'] = $now;
@@ -62,6 +76,7 @@ final class License
                     && $this->verifyToken((string) ($resp['data']['token'] ?? ''), $reason)) {
                     $state['token']          = $resp['data']['token'];
                     $state['last_online_ok'] = $now;
+                    unset($state['rejected']);
                     $this->saveState($state);
                     return self::OK;
                 }
@@ -69,6 +84,7 @@ final class License
                 // Server erreichbar, aber Lizenz abgelehnt → sofort sperren.
                 $reason = $resp['data']['reason'] ?? 'invalid';
                 $state['token'] = null;
+                $state['rejected'] = $reason; // Grund merken bis zur nächsten Prüfung
                 $this->saveState($state);
                 return self::BLOCKED;
             }
@@ -85,7 +101,7 @@ final class License
     private function evaluateGrace(array $state, ?string &$reason): string
     {
         if (empty($state['token']) || empty($state['last_online_ok'])) {
-            $reason = 'never_verified';
+            $reason = $state['rejected'] ?? 'never_verified';
             return self::BLOCKED;
         }
         if ((time() - (int) $state['last_online_ok']) > self::OFFLINE_GRACE) {

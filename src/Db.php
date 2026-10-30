@@ -92,6 +92,14 @@ final class Db
                 PRIMARY KEY (chat_id, user_id)
             );
             SQL,
+
+        // Fotomaße (Chat springt beim Laden nicht) und „Info seit“ fürs Profil.
+        2 => <<<'SQL'
+            ALTER TABLE users ADD COLUMN bio_updated_at INTEGER;
+            ALTER TABLE messages ADD COLUMN photo_w INTEGER;
+            ALTER TABLE messages ADD COLUMN photo_h INTEGER;
+            CREATE INDEX idx_messages_deleted ON messages(chat_id, deleted_at);
+            SQL,
     ];
 
     public static function path(): string

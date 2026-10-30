@@ -1,7 +1,7 @@
 # nooky-chat
 
 Selbstgehosteter 1:1-Chat. PHP 8.4, SQLite, nginx, kein Framework.
-Design „nooky" (dark, Lime + Violett/Pink) für 14–25-Jährige.
+Design „nooky“: gemütliche Nachtecke – Indigo, Glut (Koralle/Pfirsich), Mint; Unbounded + Figtree, selbst gehostet. Für 14–25-Jährige.
 
 > Open Source. Die Lizenzprüfung ist bewusst offen und lesbar – ihre
 > Sicherheit liegt nicht im Verstecken, sondern darin, dass gültige Tokens
@@ -13,9 +13,11 @@ Design „nooky" (dark, Lime + Violett/Pink) für 14–25-Jährige.
 ## Aufbau
 
 ```
-public/   Document Root des Chats (index.php, app.css, app.js)
+public/   Document Root des Chats
+          index.php (Seiten), api.php (Live-Chat, JSON), media.php (Fotos mit Rechteprüfung),
+          app.css, app.js, fonts/, brand/ (Logo, Icons), manifest.webmanifest
 landing/  Landing Page für nooky.cc (statisch, Impressum, Datenschutz)
-src/      Logik (Db, Auth, Users, License, bootstrap.php)
+src/      Logik (Db, Auth, Users, Chats, Media, View, License, bootstrap.php, views/)
 bin/      CLI: setup.php (DB + erster Admin), license-check.php (Cron)
 data/     chat.sqlite + Uploads + Lizenz-Status (nicht im Repo)
 config.php   lokale Konfiguration (nicht im Repo, Vorlage: config.example.php)
@@ -74,13 +76,29 @@ Stündlicher Cron-Check (hält die Toleranz auch ohne Traffic frisch):
 0 * * * * php /var/www/nooky-chat/bin/license-check.php
 ```
 
+## Funktionen
+
+- **Chats:** 1:1, Nachrichten werden alle 3 s abgeholt (im Hintergrund-Tab pausiert).
+  Fotos bis 10 MB; jedes Bild wird neu gerechnet (max. 1600 px, WebP), dabei fallen
+  EXIF-Daten inkl. GPS-Position weg. Fotos sieht nur, wer im Chat ist.
+- **Löschen:** Nachricht antippen → „Für mich löschen“ (nur im eigenen Verlauf) oder
+  „Für alle löschen“ (eigene Nachrichten, bis 48 h nach dem Senden; Text und Foto
+  werden sofort vom Server entfernt).
+- **Lesebestätigung:** ✓ gesendet, ✓✓ in Mint = gelesen.
+- **Zuletzt online:** „online“ bei Aktivität in den letzten 2 Minuten, sonst
+  „zuletzt online heute um …“.
+- **Profil wie bei WhatsApp:** Profilbild (quadratisch zugeschnitten), Name, Info
+  (max. 139 Zeichen, mit Vorschlägen wie „Verfügbar“, „In der Schule“), Info-Datum,
+  „Dabei seit“. Andere Profile über den Namen im Chat.
+- **Lizenz:** Ohne gültige Lizenz zeigt der Chat eine Sperrseite (API: 503 JSON).
+
 ## Status
 
-- [x] Lizenzprüfung (Client-Seite)
+- [x] Lizenzprüfung (Client-Seite) + Sperrseite im Chat
 - [x] Accounts (nur Admin legt an), Login, Sitzungen
 - [x] DB-Schema + Setup-Skript (inkl. erstem Admin)
-- [ ] Chats, Fotos, Löschen (für mich / für alle, 48 h)
-- [ ] Lesebestätigung, zuletzt online
-- [ ] Profilbild, Bio
-- [ ] nooky-Design (Bricolage + Onest, selbst gehostet)
-- [ ] Lizenzprüfung in `src/bootstrap.php` einhängen (bei `blocked` Sperrseite)
+- [x] Chats, Fotos, Löschen (für mich / für alle, 48 h)
+- [x] Lesebestätigung, zuletzt online
+- [x] Profilbild, Info (Bio)
+- [x] nooky-Design, Logo, App-Icons
+- [x] Landing Page nooky.cc

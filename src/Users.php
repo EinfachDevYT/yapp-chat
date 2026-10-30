@@ -138,10 +138,110 @@ final class Users
         $stmt->execute([$isAdmin ? 1 : 0, $id]);
     }
 
-    /** Löscht den User samt Sitzungen und Chats (ON DELETE CASCADE). */
+    /** Löscht den User samt Sitzungen, Chats (ON DELETE CASCADE) und Dateien. */
     public static function delete(int $id): void
     {
+        $files = Chats::photosOf($id);
+        $files[] = self::find($id)['avatar'] ?? null;
+
         $stmt = Db::pdo()->prepare('DELETE FROM users WHERE id = ?');
         $stmt->execute([$id]);
+
+        foreach ($files as $f) {
+            Media::delete($f);
+        }
+    }
+
+    // ---- Profil ---------------------------------------------------------
+
+    /** Info-Text („Bio“) wie bei WhatsApp: kurz, eine Zeile. */
+    public const BIO_MAX = 139;
+
+    /** Vorschläge für die Info, antippen statt tippen. */
+    public const BIO_PRESETS = [
+        'Hey, ich bin bei nooky!',
+        'Verfügbar',
+        'Beschäftigt',
+        'In der Schule',
+        'Bei der Arbeit',
+        'Am Zocken 🎮',
+        'Schlafe 😴',
+        'Nur Notfälle',
+    ];
+
+    public static function validateBio(string $bio): ?string
+    {
+        if (mb_strlen($bio) > self::BIO_MAX) {
+            return 'Info: höchstens ' . self::BIO_MAX . ' Zeichen.';
+        }
+        if (preg_match('/[\p{Cc}]/u', $bio)) {
+            return 'Info enthält unzulässige Zeichen.';
+        }
+        return null;
+    }
+
+    public static function updateProfile(int $id, string $displayName, string $bio): void
+    {
+        $old = self::find($id);
+        $bioChanged = ($old['bio'] ?? '') !== $bio;
+        $stmt = Db::pdo()->prepare(
+            'UPDATE users SET display_name = ?, bio = ?, bio_updated_at = CASE WHEN ? THEN ? ELSE bio_updated_at END WHERE id = ?'
+        );
+        $stmt->execute([$displayName, $bio !== '' ? $bio : null, $bioChanged ? 1 : 0, time(), $id]);
+    }
+
+    /** Setzt (oder entfernt mit null) das Profilbild und löscht das alte. */
+    public static function setAvatar(int $id, ?string $file): void
+    {
+        $old = self::find($id)['avatar'] ?? null;
+        Db::pdo()->prepare('UPDATE users SET avatar = ? WHERE id = ?')->execute([$file, $id]);
+        if ($old !== null && $old !== $file) {
+            Media::delete($old);
+        }
+    }
+
+    /** Aktive User außer $me, für „Neuer Chat“. */
+    public static function contactsFor(int $me): array
+    {
+        $stmt = Db::pdo()->prepare(
+            "SELECT id, username, display_name, avatar, bio, last_seen_at FROM users
+             WHERE id != ? AND status = 'active' ORDER BY display_name COLLATE NOCASE"
+        );
+        $stmt->execute([$me]);
+        return $stmt->fetchAll();
+    }
+
+    // ---- Online-Status --------------------------------------------------
+
+    /** Wer in den letzten 2 Minuten aktiv war, gilt als online. */
+    private const ONLINE_WINDOW = 120;
+
+    public static function isOnline(?array $user): bool
+    {
+        return $user !== null && $user['last_seen_at'] !== null
+            && time() - (int) $user['last_seen_at'] < self::ONLINE_WINDOW;
+    }
+
+    /** „online“, „zuletzt online heute um 14:32“, „… gestern um …“, „… am 03.10.“ */
+    public static function presence(?array $user): string
+    {
+        if ($user === null || $user['status'] !== 'active') {
+            return 'nicht verfügbar';
+        }
+        if (self::isOnline($user)) {
+            return 'online';
+        }
+        if ($user['last_seen_at'] === null) {
+            return 'noch nie online';
+        }
+        $ts   = (int) $user['last_seen_at'];
+        $time = date('H:i', $ts);
+        if (date('Y-m-d', $ts) === date('Y-m-d')) {
+            return "zuletzt online heute um $time";
+        }
+        if (date('Y-m-d', $ts) === date('Y-m-d', strtotime('-1 day'))) {
+            return "zuletzt online gestern um $time";
+        }
+        return 'zuletzt online am ' . date(date('Y', $ts) === date('Y') ? 'd.m.' : 'd.m.Y', $ts);
     }
 }

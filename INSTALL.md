@@ -247,13 +247,34 @@ ln -s /etc/nginx/sites-available/nooky-chat /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
 
-### B7. HTTPS
+### B7. PHP-Upload-Limits für Fotos
+
+Der Chat nimmt Bilder bis 10 MB an. PHP erlaubt ab Werk nur 2 MB, deshalb
+die Limits anheben (`post_max_size` etwas größer als die Datei, weil die
+Anfrage noch Formulardaten enthält):
+
+```bash
+cat > /etc/php/8.4/fpm/conf.d/99-nooky.ini <<'EOF'
+upload_max_filesize = 10M
+post_max_size = 12M
+memory_limit = 256M
+EOF
+```
+
+```bash
+systemctl restart php8.4-fpm
+```
+
+> Das nginx-Limit (`client_max_body_size 10m`) steht schon in B6. Fehlt einer
+> der beiden Schritte, scheitern größere Uploads.
+
+### B8. HTTPS
 
 ```bash
 certbot --nginx -d chat.nooky.cc
 ```
 
-### B8. Lizenz testen (erste Verbindung Chat → Lizenzserver)
+### B9. Lizenz testen (erste Verbindung Chat → Lizenzserver)
 
 ```bash
 sudo -u www-data php /var/www/nooky-chat/bin/license-check.php
@@ -264,13 +285,13 @@ Erwartet: `Lizenz: ok`. Im Panel des Lizenzservers steht der Key jetzt auf
 
 Bei `blocked` siehe [Fehlersuche](#fehlersuche).
 
-### B9. Stündliche Prüfung per Cron
+### B10. Stündliche Prüfung per Cron
 
 ```bash
 echo '0 * * * * www-data php /var/www/nooky-chat/bin/license-check.php >/dev/null 2>&1' > /etc/cron.d/nooky-chat
 ```
 
-### B10. Loslegen
+### B11. Loslegen
 
 `https://chat.nooky.cc` öffnen, mit dem Admin aus B4 anmelden, unter
 **Admin** die Accounts anlegen.
@@ -345,6 +366,51 @@ certbot --nginx -d nooky.cc
 `https://nooky.cc` zeigt jetzt die Landing Page, der Button führt zu
 `https://chat.nooky.cc`.
 
+✅ **Landing Page fertig.**
+
+---
+
+## Teil D: SSL-Zertifikate automatisch erneuern
+
+Let's-Encrypt-Zertifikate laufen nach 90 Tagen ab. Ein Cron-Job erneuert
+alle drei (`license.nooky.cc`, `chat.nooky.cc`, `nooky.cc`) rechtzeitig.
+Läuft das Zertifikat des Lizenzservers ab, scheitert die Lizenzprüfung
+(`never_verified`) und der Chat sperrt sich.
+
+### D1. Cron-Datei anlegen
+
+Zweimal täglich um 3:17 und 15:17 Uhr, als root. `certbot renew` erneuert
+nur Zertifikate, die in weniger als 30 Tagen ablaufen – sonst passiert nichts.
+
+```bash
+cat > /etc/cron.d/nooky-certbot <<'EOF'
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 3,15 * * * root certbot renew --quiet --deploy-hook "systemctl reload nginx"
+EOF
+```
+
+Der `--deploy-hook` läuft nur, wenn wirklich ein Zertifikat erneuert wurde,
+und sorgt dafür, dass nginx die neuen Zertifikate lädt.
+
+> Debians certbot-Paket bringt schon einen systemd-Timer (`certbot.timer`)
+> mit. Beide parallel sind harmlos. Wer nur den Cron will:
+> `systemctl disable --now certbot.timer`
+
+### D2. Erneuerung testen
+
+```bash
+certbot renew --dry-run
+```
+
+Erwartet: `Congratulations, all simulated renewals succeeded` mit allen drei
+Domains. Es wird nichts verändert.
+
+Alle Zertifikate mit Ablaufdatum anzeigen:
+
+```bash
+certbot certificates
+```
+
 ✅ **Alles fertig.**
 
 ---
@@ -370,14 +436,17 @@ certbot --nginx -d nooky.cc
 - [ ] Lizenzschlüssel mit Chat-Domain angelegt
 - [ ] Chat: `config.php` mit allen vier Werten
 - [ ] Chat: Setup gelaufen, `data/` gehört `www-data`
+- [ ] Chat: PHP-Upload-Limits in `/etc/php/8.4/fpm/conf.d/99-nooky.ini`, PHP-FPM neu gestartet
 - [ ] Chat: HTTPS aktiv
 - [ ] `license-check.php` meldet `ok`
 - [ ] Cron-Datei `/etc/cron.d/nooky-chat` angelegt
+- [ ] Cron-Datei `/etc/cron.d/nooky-certbot` angelegt
+- [ ] `certbot renew --dry-run` läuft für alle drei Domains durch
 - [ ] Backup von `/var/www/nooky-license/data` gemacht
 
 ## Fehlersuche
 
-| Meldung bei B8 | Ursache / Lösung |
+| Meldung bei B9 | Ursache / Lösung |
 |---|---|
 | `never_verified` | Lizenzserver nicht erreichbar: `verify_url` prüfen, A7 testen, HTTPS-Zertifikat ok? |
 | `bad_signature` | `public_key` in der Chat-Config passt nicht zum Lizenzserver → aus A2 neu kopieren |

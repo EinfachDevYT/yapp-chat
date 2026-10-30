@@ -1,5 +1,5 @@
-Bricolage Grotesque (Copyright 2022 The Bricolage Grotesque Project Authors)
-Onest (Copyright 2021 The Onest Project Authors)
+Unbounded (Copyright 2022 The Unbounded Project Authors)
+Figtree (Copyright 2022 The Figtree Project Authors)
 
 Beide Schriften stehen unter der SIL Open Font License 1.1:
 https://openfontlicense.org

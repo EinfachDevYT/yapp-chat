@@ -23,10 +23,27 @@ if (!is_file($configFile)) {
 }
 $config = require $configFile;
 
-header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+date_default_timezone_set((string) ($config['timezone'] ?? 'Europe/Berlin'));
+
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; "
      . "frame-ancestors 'none'; form-action 'self'; base-uri 'none'; object-src 'none'");
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 header('Cache-Control: no-store');
+
+// Lizenz: ohne gültige Lizenz gibt es statt des Chats nur die Sperrseite.
+// Die Online-Prüfung läuft höchstens einmal pro Stunde (meist schon per Cron).
+$licenseReason = null;
+if ((new Nooky\Chat\License($config['license'] ?? []))->check($licenseReason) !== Nooky\Chat\License::OK) {
+    http_response_code(503);
+    header('Retry-After: 3600');
+    if (defined('NOOKY_API')) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => 'license', 'reason' => $licenseReason]);
+        exit;
+    }
+    require __DIR__ . '/views/locked.php';
+    exit;
+}
 
 Nooky\Chat\Auth::boot();
