@@ -1,0 +1,61 @@
+/* Schlichtes Grundlayout. Das eigentliche yapp-Design (Bricolage + Onest,
+   Lime / Violett-Pink) kommt in einem eigenen Schritt. */
+:root {
+  --bg: #0e0e12;
+  --card: #18181f;
+  --line: #2a2a35;
+  --text: #f1f1f5;
+  --muted: #9a9aab;
+  --lime: #c6f432;
+  --pink: #e04dd6;
+  --red: #ff5c6c;
+  --warn: #ffb547;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .75rem 1rem; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { font-weight: 800; font-size: 1.4rem; color: var(--lime); letter-spacing: -.02em; }
+nav { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+nav a { color: var(--text); text-decoration: none; }
+nav a:hover { color: var(--lime); }
+main { max-width: 960px; margin: 0 auto; padding: 1rem; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
+.card.narrow { max-width: 400px; margin: 3rem auto; }
+.card.notice { border-color: var(--lime); }
+h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+label { display: block; margin-bottom: .75rem; font-size: .9rem; color: var(--muted); }
+label.check { display: flex; gap: .5rem; align-items: center; color: var(--text); }
+input:not([type=checkbox]) { display: block; width: 100%; margin-top: .25rem; padding: .6rem .75rem;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+input:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+button { padding: .55rem 1rem; border: 0; border-radius: 999px; background: var(--lime); color: #111;
+  font: inherit; font-weight: 600; cursor: pointer; }
+button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+button.warn { background: var(--warn); }
+button.danger { background: var(--red); color: #fff; }
+.actions button, form.inline button { padding: .3rem .7rem; font-size: .85rem; }
+.actions button:not(.warn):not(.danger) { background: transparent; color: var(--text); border: 1px solid var(--line); }
+form.inline { display: inline; margin: 0 .25rem .25rem 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; align-items: end; }
+.grid label { margin: 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .6rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: .85rem; }
+@media (max-width: 640px) {
+  thead { display: none; }
+  tr, td { display: block; }
+  td { border: 0; padding: .2rem 0; }
+  tr { border-bottom: 1px solid var(--line); padding: .6rem 0; }
+}
+.badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .8rem; background: var(--line); }
+.badge.ok { background: rgba(198, 244, 50, .15); color: var(--lime); }
+.badge.bad { background: rgba(255, 92, 108, .15); color: var(--red); }
+.badge.admin { background: rgba(224, 77, 214, .18); color: var(--pink); }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.err { color: var(--red); }
+.ok { color: var(--lime); }
+.pw code { font-size: 1.4rem; color: var(--lime); user-select: all; }
+code { font-family: ui-monospace, monospace; }
