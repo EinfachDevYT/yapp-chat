@@ -131,6 +131,7 @@ switch ($action) {
         out([
             'html'   => View::chatList($chats, $me),
             'unread' => array_sum(array_column($chats, 'unread')),
+            'latest' => Chats::latestUnread($me),
         ]);
 
     default:

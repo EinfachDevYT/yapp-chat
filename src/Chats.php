@@ -82,6 +82,35 @@ final class Chats
         return $chats;
     }
 
+    /** Neueste ungelesene Nachricht an $me (für Desktop-Benachrichtigungen). */
+    public static function latestUnread(int $me): ?array
+    {
+        $stmt = Db::pdo()->prepare(
+            'SELECT m.id, m.chat_id, m.body, m.photo, u.display_name, u.avatar
+             FROM messages m
+             JOIN chats c ON c.id = m.chat_id
+             JOIN users u ON u.id = m.sender_id
+             LEFT JOIN chat_reads r ON r.chat_id = m.chat_id AND r.user_id = :me
+             WHERE (c.user_a = :me OR c.user_b = :me) AND m.sender_id != :me
+               AND m.id > COALESCE(r.last_read_id, 0) AND m.deleted_at IS NULL
+               AND NOT EXISTS (SELECT 1 FROM message_hidden h WHERE h.message_id = m.id AND h.user_id = :me)
+             ORDER BY m.id DESC LIMIT 1'
+        );
+        $stmt->execute([':me' => $me]);
+        $m = $stmt->fetch();
+        if ($m === false) {
+            return null;
+        }
+        $text = $m['photo'] ? '📷 ' . ($m['body'] ?: 'Foto') : (string) $m['body'];
+        return [
+            'id'    => (int) $m['id'],
+            'chat'  => (int) $m['chat_id'],
+            'title' => $m['display_name'],
+            'body'  => mb_substr($text, 0, 140),
+            'icon'  => $m['avatar'] ? 'media.php?f=' . $m['avatar'] : 'brand/icon-192.png',
+        ];
+    }
+
     public static function unreadTotal(int $me): int
     {
         return array_sum(array_column(self::listFor($me), 'unread'));

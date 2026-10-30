@@ -68,13 +68,46 @@
   }
 
   // ---- Startseite: Chat-Liste live halten ---------------------------------
+  // ---- Chat-Liste + Desktop-Benachrichtigungen (auf allen Seiten) ----------
   const list = document.getElementById('chatlist');
-  if (list) {
+  const currentChat = document.getElementById('chat') ? +document.getElementById('chat').dataset.chat : 0;
+  const isDesktop = !matchMedia('(pointer: coarse)').matches;
+  const canNotify = isDesktop && 'Notification' in window;
+
+  // Erlaubnis automatisch beim ersten Klick erfragen (ohne Klick lassen Browser das nicht zu).
+  if (canNotify && csrf && Notification.permission === 'default') {
+    document.addEventListener('click', () => {
+      if (Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+    }, { once: true, capture: true });
+  }
+
+  // Bis zu welcher Nachricht schon benachrichtigt wurde – geteilt zwischen Tabs.
+  const NOTIFIED = 'nooky-notified';
+  const getNotified = () => { try { return +(localStorage.getItem(NOTIFIED) || 0); } catch (e) { return 0; } };
+  const setNotified = (id) => { try { localStorage.setItem(NOTIFIED, String(id)); } catch (e) { /* egal */ } };
+  let baselineSet = false;
+
+  function maybeNotify(latest) {
+    // Beim ersten Abruf nur merken: alte ungelesene Nachrichten nicht nochmal melden.
+    if (!baselineSet) { baselineSet = true; if (latest && latest.id > getNotified()) setNotified(latest.id); return; }
+    if (!latest || latest.id <= getNotified()) return;
+    setNotified(latest.id);
+    // Wer gerade genau diesen Chat vor sich hat, braucht keine Meldung.
+    if (latest.chat === currentChat && !document.hidden && document.hasFocus()) return;
+    if (!canNotify || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(latest.title, { body: latest.body, icon: latest.icon, tag: 'nooky-chat-' + latest.chat });
+      n.onclick = () => { window.focus(); location.href = '?page=chat&id=' + latest.chat; n.close(); };
+    } catch (e) { /* Browser ohne Notification-Konstruktor */ }
+  }
+
+  if (csrf) {
     poll(async () => {
       const d = await api('chats');
-      list.innerHTML = d.html;
+      if (list) list.innerHTML = d.html;
       setUnread(d.unread);
-    }, 3000, 10000);
+      maybeNotify(d.latest);
+    }, 3000, 5000);
   }
 
   function setUnread(n) {
@@ -235,7 +268,8 @@
 
   async function refresh() {
     const params = { chat: chatId, after: lastId, since };
-    if (!document.hidden && lastId) params.read = lastId;
+    // Nur als gelesen markieren, wenn das Fenster wirklich vorne ist.
+    if (!document.hidden && document.hasFocus() && lastId) params.read = lastId;
     const d = await api('messages', params);
     applyMeta(d);
     append(d.messages);
@@ -370,5 +404,6 @@
   });
   viewer.addEventListener('click', () => viewer.close());
 
-  load().then(() => poll(refresh, 1000, 5000)).catch(() => poll(refresh, 1000, 5000));
+  const start = () => { const tick = poll(refresh, 1000, 5000); window.addEventListener('focus', tick); };
+  load().then(start).catch(start);
 })();
