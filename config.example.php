@@ -10,7 +10,7 @@ return [
         'key'        => 'XXXX-XXXX-XXXX-XXXX',
 
         // Prüf-Endpunkt des Lizenzservers.
-        'verify_url' => 'https://lizenz.example.de/api/verify.php',
+        'verify_url' => 'https://license.nooky.cc/api/verify.php',
 
         // Public Key, den bin/setup.php des Lizenzservers ausgegeben hat.
         'public_key' => 'BASE64-PUBLIC-KEY',
@@ -18,6 +18,6 @@ return [
         // An diese Domain ist der Key gebunden. Leer lassen = aus dem
         // aktuellen Request (HTTP_HOST) nehmen. Für den Cron-Check (CLI)
         // muss die Domain hier gesetzt sein.
-        'domain'     => 'chat.example.de',
+        'domain'     => 'chat.nooky.cc',
     ],
 ];

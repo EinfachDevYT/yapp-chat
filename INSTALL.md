@@ -20,15 +20,15 @@ HTTPS     ──► PRÜF-URL ──────────► config.php  'ver
 Key-Domain = Chat-Domain ◄───────► config.php  'domain'
 ```
 
-## Platzhalter
+## Domains
 
-| Platzhalter | Bedeutung | Beispiel |
-|---|---|---|
-| `lizenz.example.de` | Domain des Lizenzservers | `lizenz.meinedomain.de` |
-| `chat.example.de` | Domain des Chats | `chat.meinedomain.de` |
+| Domain | Wofür |
+|---|---|
+| `license.nooky.cc` | Lizenzserver (Panel + Prüf-API) |
+| `chat.nooky.cc` | Chat |
 
-Ersetze sie überall in dieser Anleitung. Beide Domains können auf denselben
-Server zeigen.
+Beide können auf denselben Server zeigen. Alle Befehle unten sind schon auf
+diese Domains eingestellt.
 
 ---
 
@@ -38,7 +38,7 @@ Server zeigen.
 Servers anlegen. Erst weitermachen, wenn beide auflösen:
 
 ```bash
-getent hosts lizenz.example.de chat.example.de
+getent hosts license.nooky.cc chat.nooky.cc
 ```
 
 **Pakete:**
@@ -92,7 +92,7 @@ cat > /etc/nginx/sites-available/nooky-license <<'EOF'
 server {
     listen 80;
     listen [::]:80;
-    server_name lizenz.example.de;
+    server_name license.nooky.cc;
 
     root /var/www/nooky-license/public;
     index index.php;
@@ -126,14 +126,14 @@ nginx -t && systemctl reload nginx
 ### A5. HTTPS
 
 ```bash
-certbot --nginx -d lizenz.example.de
+certbot --nginx -d license.nooky.cc
 ```
 
 ### A6. Lizenzschlüssel für den Chat anlegen
 
-1. `https://lizenz.example.de` öffnen, mit dem Login aus A2 anmelden.
+1. `https://license.nooky.cc` öffnen, mit dem Login aus A2 anmelden.
 2. **Neuen Key erzeugen**:
-   - **Domain:** die Chat-Domain, z. B. `chat.example.de` (ohne `https://`, ohne `www.`)
+   - **Domain:** die Chat-Domain, z. B. `chat.nooky.cc` (ohne `https://`, ohne `www.`)
    - **Max. Instanzen:** `1`
    - **Laufzeit:** `0` = unbegrenzt
 3. Der erzeugte **LIZENZSCHLÜSSEL** (`XXXX-XXXX-XXXX-XXXX`)
@@ -142,7 +142,7 @@ certbot --nginx -d lizenz.example.de
 ### A7. Prüfen, ob die API erreichbar ist
 
 ```bash
-curl -s -X POST https://lizenz.example.de/api/verify.php -H 'Content-Type: application/json' -d '{}'
+curl -s -X POST https://license.nooky.cc/api/verify.php -H 'Content-Type: application/json' -d '{}'
 ```
 
 Erwartet: `{"valid":false,"reason":"bad_request",…}` – das ist **richtig**
@@ -176,9 +176,9 @@ nano /var/www/nooky-chat/config.php
 return [
     'license' => [
         'key'        => 'XXXX-XXXX-XXXX-XXXX',                      // ← LIZENZSCHLÜSSEL aus A6
-        'verify_url' => 'https://lizenz.example.de/api/verify.php', // ← deine Lizenz-Domain
+        'verify_url' => 'https://license.nooky.cc/api/verify.php', // ← deine Lizenz-Domain
         'public_key' => 'AbCd…==',                                  // ← PUBLIC KEY aus A2
-        'domain'     => 'chat.example.de',                          // ← exakt die Domain aus A6
+        'domain'     => 'chat.nooky.cc',                          // ← exakt die Domain aus A6
     ],
 ];
 ```
@@ -213,7 +213,7 @@ cat > /etc/nginx/sites-available/nooky-chat <<'EOF'
 server {
     listen 80;
     listen [::]:80;
-    server_name chat.example.de;
+    server_name chat.nooky.cc;
 
     root /var/www/nooky-chat/public;
     index index.php;
@@ -249,7 +249,7 @@ nginx -t && systemctl reload nginx
 ### B7. HTTPS
 
 ```bash
-certbot --nginx -d chat.example.de
+certbot --nginx -d chat.nooky.cc
 ```
 
 ### B8. Lizenz testen (erste Verbindung Chat → Lizenzserver)
@@ -271,7 +271,7 @@ echo '0 * * * * www-data php /var/www/nooky-chat/bin/license-check.php >/dev/nul
 
 ### B10. Loslegen
 
-`https://chat.example.de` öffnen, mit dem Admin aus B4 anmelden, unter
+`https://chat.nooky.cc` öffnen, mit dem Admin aus B4 anmelden, unter
 **Admin** die Accounts anlegen.
 
 ✅ **Fertig.**
@@ -282,12 +282,12 @@ echo '0 * * * * www-data php /var/www/nooky-chat/bin/license-check.php >/dev/nul
 
 | Wert | Woher | Wohin |
 |---|---|---|
-| Panel-Login Lizenzserver | du wählst ihn in A2 | nur zum Anmelden auf `lizenz.example.de` |
+| Panel-Login Lizenzserver | du wählst ihn in A2 | nur zum Anmelden auf `license.nooky.cc` |
 | **PUBLIC KEY** | Ausgabe von A2 | Chat `config.php` → `'public_key'` |
 | **LIZENZSCHLÜSSEL** | Panel, A6 | Chat `config.php` → `'key'` |
 | **Prüf-URL** | `https://<Lizenz-Domain>/api/verify.php` | Chat `config.php` → `'verify_url'` |
 | **Chat-Domain** | deine Wahl | Panel A6 → *Domain* **und** Chat `config.php` → `'domain'` (identisch!) |
-| Chat-Admin | du wählst ihn in B4 | zum Anmelden auf `chat.example.de` |
+| Chat-Admin | du wählst ihn in B4 | zum Anmelden auf `chat.nooky.cc` |
 | `server_name` | deine Domains | nginx-Dateien aus A4 und B6 |
 
 ## Checkliste
