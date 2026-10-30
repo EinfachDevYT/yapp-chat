@@ -8,6 +8,8 @@ Design „yapp" (dark, Lime + Violett/Pink) für 14–25-Jährige.
 > nur der [Lizenzserver](https://github.com/EinfachDevYT/yapp-license) mit
 > seinem privaten Ed25519-Schlüssel ausstellen kann.
 
+> **Installation:** siehe [INSTALL.md](INSTALL.md) (Lizenzserver + Chat, Schritt für Schritt).
+
 ## Aufbau
 
 ```

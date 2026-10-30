@@ -1,0 +1,360 @@
+# Installation: Lizenzserver + Chat (Debian 13, nginx, PHP 8.4, als root)
+
+## Reihenfolge – warum zuerst der Lizenzserver?
+
+Der Chat braucht drei Werte, die **nur der Lizenzserver** liefert:
+
+1. den **Public Key** (entsteht beim Setup des Lizenzservers),
+2. den **Lizenzschlüssel** (legst du im Panel des Lizenzservers an),
+3. die **Prüf-URL** (`https://lizenz…/api/verify.php`, muss per HTTPS erreichbar sein).
+
+Ohne diese drei Werte meldet die Lizenzprüfung des Chats `blocked`.
+Deshalb gilt: **Teil A (Lizenzserver) komplett fertig → dann Teil B (Chat).**
+
+```
+Teil A: Lizenzserver           Teil B: Chat
+────────────────────           ────────────
+setup.php ──► PUBLIC KEY ────────► config.php  'public_key'
+Panel     ──► LIZENZSCHLÜSSEL ───► config.php  'key'
+HTTPS     ──► PRÜF-URL ──────────► config.php  'verify_url'
+Key-Domain = Chat-Domain ◄───────► config.php  'domain'
+```
+
+## Platzhalter
+
+| Platzhalter | Bedeutung | Beispiel |
+|---|---|---|
+| `lizenz.example.de` | Domain des Lizenzservers | `lizenz.meinedomain.de` |
+| `chat.example.de` | Domain des Chats | `chat.meinedomain.de` |
+
+Ersetze sie überall in dieser Anleitung. Beide Domains können auf denselben
+Server zeigen.
+
+---
+
+## Teil 0: Vorbereitung (einmalig)
+
+**DNS:** Für beide Domains einen A-Record (und ggf. AAAA) auf die IP des
+Servers anlegen. Erst weitermachen, wenn beide auflösen:
+
+```bash
+getent hosts lizenz.example.de chat.example.de
+```
+
+**Pakete:**
+
+```bash
+apt update && apt install -y nginx php8.4-fpm php8.4-sqlite3 php8.4-curl php8.4-mbstring php8.4-gd git certbot python3-certbot-nginx
+```
+
+> Laufen Lizenzserver und Chat auf **verschiedenen** Servern: die Pakete auf
+> beiden installieren.
+
+---
+
+## Teil A: Lizenzserver
+
+### A1. Code holen
+
+```bash
+git clone https://github.com/EinfachDevYT/yapp-license /var/www/yapp-license
+```
+
+### A2. Setup: Schlüsselpaar + Panel-Login
+
+```bash
+php /var/www/yapp-license/bin/setup.php
+```
+
+- Fragt Benutzername + Passwort fürs **Panel des Lizenzservers** ab.
+- Gibt am Ende den **PUBLIC KEY** aus (lange Base64-Zeichenkette).
+  👉 **Notieren** – kommt in B3 in die `config.php` des Chats.
+  Später wieder anzeigen:
+  `grep '"public"' /var/www/yapp-license/data/keys.json`
+
+### A3. Rechte setzen
+
+`setup.php` lief als root – Datenbank und `keys.json` gehören jetzt root.
+PHP läuft als `www-data` und muss sie lesen können:
+
+```bash
+chown -R root:root /var/www/yapp-license
+```
+
+```bash
+chown -R www-data:www-data /var/www/yapp-license/data && chmod 700 /var/www/yapp-license/data
+```
+
+### A4. nginx
+
+```bash
+cat > /etc/nginx/sites-available/yapp-license <<'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name lizenz.example.de;
+
+    root /var/www/yapp-license/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+EOF
+```
+
+👉 In der Datei `server_name` auf deine Lizenz-Domain ändern.
+
+```bash
+ln -s /etc/nginx/sites-available/yapp-license /etc/nginx/sites-enabled/ && rm -f /etc/nginx/sites-enabled/default
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### A5. HTTPS
+
+```bash
+certbot --nginx -d lizenz.example.de
+```
+
+### A6. Lizenzschlüssel für den Chat anlegen
+
+1. `https://lizenz.example.de` öffnen, mit dem Login aus A2 anmelden.
+2. **Neuen Key erzeugen**:
+   - **Domain:** die Chat-Domain, z. B. `chat.example.de` (ohne `https://`, ohne `www.`)
+   - **Max. Instanzen:** `1`
+   - **Laufzeit:** `0` = unbegrenzt
+3. Der erzeugte **LIZENZSCHLÜSSEL** (`XXXX-XXXX-XXXX-XXXX`)
+   👉 **Notieren** – kommt in B3 in die `config.php` des Chats.
+
+### A7. Prüfen, ob die API erreichbar ist
+
+```bash
+curl -s -X POST https://lizenz.example.de/api/verify.php -H 'Content-Type: application/json' -d '{}'
+```
+
+Erwartet: `{"valid":false,"reason":"bad_request",…}` – das ist **richtig**
+(leere Anfrage), es zeigt nur, dass der Server antwortet.
+
+✅ **Teil A fertig.** Du hast jetzt: PUBLIC KEY, LIZENZSCHLÜSSEL, Prüf-URL.
+
+---
+
+## Teil B: Chat
+
+### B1. Code holen
+
+```bash
+git clone -b feature/accounts-login https://github.com/EinfachDevYT/yapp-chat /var/www/yapp-chat
+```
+
+> Sobald der Branch in `main` gemergt ist, `-b feature/accounts-login` weglassen.
+
+### B2. Config anlegen
+
+```bash
+cp /var/www/yapp-chat/config.example.php /var/www/yapp-chat/config.php
+```
+
+### B3. Config ausfüllen – hier kommen die Werte aus Teil A rein
+
+```bash
+nano /var/www/yapp-chat/config.php
+```
+
+```php
+return [
+    'license' => [
+        'key'        => 'XXXX-XXXX-XXXX-XXXX',                      // ← LIZENZSCHLÜSSEL aus A6
+        'verify_url' => 'https://lizenz.example.de/api/verify.php', // ← deine Lizenz-Domain
+        'public_key' => 'AbCd…==',                                  // ← PUBLIC KEY aus A2
+        'domain'     => 'chat.example.de',                          // ← exakt die Domain aus A6
+    ],
+];
+```
+
+### B4. Datenbank + ersten Chat-Admin anlegen
+
+```bash
+php /var/www/yapp-chat/bin/setup.php
+```
+
+Fragt Benutzername, Anzeigename und Passwort für den **Admin im Chat** ab.
+(Das ist ein anderer Account als der Panel-Login des Lizenzservers.)
+
+### B5. Rechte setzen
+
+```bash
+chown -R root:root /var/www/yapp-chat
+```
+
+```bash
+chown -R www-data:www-data /var/www/yapp-chat/data
+```
+
+```bash
+chown root:www-data /var/www/yapp-chat/config.php && chmod 640 /var/www/yapp-chat/config.php
+```
+
+### B6. nginx
+
+```bash
+cat > /etc/nginx/sites-available/yapp-chat <<'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name chat.example.de;
+
+    root /var/www/yapp-chat/public;
+    index index.php;
+
+    client_max_body_size 10m;   # Foto-Uploads
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+EOF
+```
+
+👉 In der Datei `server_name` auf deine Chat-Domain ändern.
+
+```bash
+ln -s /etc/nginx/sites-available/yapp-chat /etc/nginx/sites-enabled/
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### B7. HTTPS
+
+```bash
+certbot --nginx -d chat.example.de
+```
+
+### B8. Lizenz testen (erste Verbindung Chat → Lizenzserver)
+
+```bash
+sudo -u www-data php /var/www/yapp-chat/bin/license-check.php
+```
+
+Erwartet: `Lizenz: ok`. Im Panel des Lizenzservers steht der Key jetzt auf
+`1 / 1` Instanzen, unter **Log** ist die Prüfung zu sehen.
+
+Bei `blocked` siehe [Fehlersuche](#fehlersuche).
+
+### B9. Stündliche Prüfung per Cron
+
+```bash
+echo '0 * * * * www-data php /var/www/yapp-chat/bin/license-check.php >/dev/null 2>&1' > /etc/cron.d/yapp-chat
+```
+
+### B10. Loslegen
+
+`https://chat.example.de` öffnen, mit dem Admin aus B4 anmelden, unter
+**Admin** die Accounts anlegen.
+
+✅ **Fertig.**
+
+---
+
+## Was trage ich wo ein? (Übersicht)
+
+| Wert | Woher | Wohin |
+|---|---|---|
+| Panel-Login Lizenzserver | du wählst ihn in A2 | nur zum Anmelden auf `lizenz.example.de` |
+| **PUBLIC KEY** | Ausgabe von A2 | Chat `config.php` → `'public_key'` |
+| **LIZENZSCHLÜSSEL** | Panel, A6 | Chat `config.php` → `'key'` |
+| **Prüf-URL** | `https://<Lizenz-Domain>/api/verify.php` | Chat `config.php` → `'verify_url'` |
+| **Chat-Domain** | deine Wahl | Panel A6 → *Domain* **und** Chat `config.php` → `'domain'` (identisch!) |
+| Chat-Admin | du wählst ihn in B4 | zum Anmelden auf `chat.example.de` |
+| `server_name` | deine Domains | nginx-Dateien aus A4 und B6 |
+
+## Checkliste
+
+- [ ] Beide Domains lösen auf (Teil 0)
+- [ ] Lizenzserver: Setup gelaufen, PUBLIC KEY notiert
+- [ ] Lizenzserver: `data/` gehört `www-data`
+- [ ] Lizenzserver: HTTPS aktiv, A7 antwortet
+- [ ] Lizenzschlüssel mit Chat-Domain angelegt
+- [ ] Chat: `config.php` mit allen vier Werten
+- [ ] Chat: Setup gelaufen, `data/` gehört `www-data`
+- [ ] Chat: HTTPS aktiv
+- [ ] `license-check.php` meldet `ok`
+- [ ] Cron-Datei `/etc/cron.d/yapp-chat` angelegt
+- [ ] Backup von `/var/www/yapp-license/data` gemacht
+
+## Fehlersuche
+
+| Meldung bei B8 | Ursache / Lösung |
+|---|---|
+| `never_verified` | Lizenzserver nicht erreichbar: `verify_url` prüfen, A7 testen, HTTPS-Zertifikat ok? |
+| `bad_signature` | `public_key` in der Chat-Config passt nicht zum Lizenzserver → aus A2 neu kopieren |
+| `bad_domain` / `domain_mismatch` | Domain im Panel ≠ `'domain'` in der Chat-Config |
+| `unknown_key` | Tippfehler im `'key'` |
+| `too_many` | Instanz schon belegt (z. B. nach Neuinstallation) → im Panel bei „Instanzen“ **reset** |
+| `locked` / `expired` | Key im Panel gesperrt bzw. abgelaufen |
+| PHP-Fehler „Permission denied“ | Rechte-Schritt (A3 / B5) vergessen |
+
+## Backup
+
+**Wichtigste Datei überhaupt:** `/var/www/yapp-license/data/keys.json`
+(privater Schlüssel). Geht sie verloren, sperren sich nach spätestens
+12 h alle Chats, bis überall ein neuer Public Key eingetragen ist.
+
+```bash
+tar czf /root/yapp-backup-$(date +%F).tar.gz /var/www/yapp-license/data /var/www/yapp-chat/data /var/www/yapp-chat/config.php
+```
+
+Backup vom Server herunterladen und sicher aufbewahren.
+**Niemals** `bin/setup.php --force` auf dem Lizenzserver ausführen – das
+erzeugt ein neues Schlüsselpaar und macht alle Lizenzen ungültig.
+
+## Notfall: Passwort vergessen
+
+Chat-Admin:
+
+```bash
+sudo -u www-data php /var/www/yapp-chat/bin/setup.php
+```
+
+Panel des Lizenzservers:
+
+```bash
+sudo -u www-data php /var/www/yapp-license/bin/setup.php
+```
+
+Jeweils denselben Benutzernamen eingeben → Passwort wird neu gesetzt.
+Ab jetzt immer mit `sudo -u www-data` aufrufen, sonst gehören die Dateien
+wieder root (dann A3 bzw. B5 wiederholen).
+
+## Updates
+
+```bash
+git -C /var/www/yapp-license pull && git -C /var/www/yapp-chat pull
+```
+
+Datenbank-Änderungen werden beim nächsten Seitenaufruf automatisch
+eingespielt.
