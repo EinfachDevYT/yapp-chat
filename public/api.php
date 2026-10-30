@@ -10,10 +10,6 @@ declare(strict_types=1);
  *   POST ?a=send    chat, text, photo (Datei)
  *   POST ?a=delete  id, scope=me|all
  *   GET  ?a=chats   Chat-Liste als HTML + Zahl ungelesener Nachrichten
- *   GET  ?a=push_key        öffentlicher VAPID-Schlüssel
- *   POST ?a=subscribe       endpoint (Gerät für Push anmelden)
- *   POST ?a=unsubscribe     endpoint
- *   GET  ?a=notify          Text für die Benachrichtigung (vom Service Worker)
  *
  * POST-Anfragen brauchen den CSRF-Token im Header X-CSRF-Token.
  */
@@ -25,7 +21,6 @@ require dirname(__DIR__) . '/src/bootstrap.php';
 use Nooky\Chat\Auth;
 use Nooky\Chat\Chats;
 use Nooky\Chat\Media;
-use Nooky\Chat\Push;
 use Nooky\Chat\Users;
 use Nooky\Chat\View;
 
@@ -60,7 +55,6 @@ if ($isPost && !Auth::checkCsrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) {
 
 switch ($action) {
     case 'messages':
-        Push::markActive(Auth::user());
         $chat = Chats::forUser((int) ($_GET['chat'] ?? 0), $me);
         if ($chat === null) {
             fail('Chat nicht gefunden.', 404);
@@ -119,14 +113,7 @@ switch ($action) {
             fail('Leere Nachricht.');
         }
         $row = Chats::send((int) $chat['id'], $me, $text !== '' ? $text : null, $photo);
-
-        // Erst antworten, dann das Gegenüber per Push wecken (blockiert den Absender nicht).
-        echo json_encode(['message' => Chats::present($row, $me)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-        Push::notify((int) $chat['other']['id']);
-        exit;
+        out(['message' => Chats::present($row, $me)]);
 
     case 'delete':
         if (!$isPost) {
@@ -140,56 +127,11 @@ switch ($action) {
         out(['ok' => true]);
 
     case 'chats':
-        Push::markActive(Auth::user());
         $chats = Chats::listFor($me);
         out([
             'html'   => View::chatList($chats, $me),
             'unread' => array_sum(array_column($chats, 'unread')),
         ]);
-
-    case 'push_key':
-        out(['key' => Push::publicKey()]);
-
-    case 'subscribe':
-    case 'unsubscribe':
-        if (!$isPost) {
-            fail('POST erwartet.', 405);
-        }
-        $endpoint = is_string($_POST['endpoint'] ?? null) ? $_POST['endpoint'] : '';
-        if ($action === 'unsubscribe') {
-            Push::unsubscribe($me, $endpoint);
-            out(['ok' => true]);
-        }
-        if (!Push::subscribe($me, $endpoint)) {
-            fail('Ungültiges Abo.');
-        }
-        out(['ok' => true]);
-
-    case 'push_test':
-        if (!$isPost) {
-            fail('POST erwartet.', 405);
-        }
-        Push::notify($me, force: true);
-        out(['ok' => true]);
-
-    case 'notify':
-        // Neueste ungelesene Nachricht für die Benachrichtigung.
-        $chats  = Chats::listFor($me);
-        $unread = array_sum(array_column($chats, 'unread'));
-        foreach ($chats as $c) {
-            if ($c['unread'] > 0 && $c['last'] !== null) {
-                $l = $c['last'];
-                $body = $l['photo'] ? '📷 ' . ($l['body'] ?: 'Foto') : (string) $l['body'];
-                out([
-                    'title'  => $c['display_name'],
-                    'body'   => ($c['unread'] > 1 ? $c['unread'] . ' neue Nachrichten · ' : '') . mb_substr($body, 0, 140),
-                    'chat'   => (int) $c['id'],
-                    'icon'   => $c['avatar'] ? 'media.php?f=' . $c['avatar'] : 'brand/icon-192.png',
-                    'unread' => $unread,
-                ]);
-            }
-        }
-        out(['title' => 'nooky', 'body' => 'Neue Nachricht', 'chat' => 0, 'icon' => 'brand/icon-192.png', 'unread' => $unread]);
 
     default:
         fail('Unbekannte Aktion.', 404);

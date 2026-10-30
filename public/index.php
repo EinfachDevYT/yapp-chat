@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Einstieg des Chats. Seiten über ?page=… (keine Rewrite-Regeln nötig):
  *   login, logout, password, home (Chats), new (neuer Chat), chat, profile,
- *   user (fremdes Profil), app (installieren + Benachrichtigungen), admin
+ *   user (fremdes Profil), admin
  * Live-Funktionen (Nachrichten senden/abholen, löschen) laufen über api.php.
  */
 
@@ -133,11 +133,6 @@ switch ($page) {
             redirect('profile');
         }
         render_profile(Auth::user(), Auth::takeFlash());
-        exit;
-
-    // ---- App installieren + Benachrichtigungen ----------------------------
-    case 'app':
-        render_app();
         exit;
 
     // ---- Fremdes Profil ---------------------------------------------------
@@ -329,8 +324,6 @@ function render_home(array $chats, ?array $flash): void
     View::head('Chats', ['body' => 'home-view']);
     echo '<main class="page">';
     View::flash($flash);
-    echo '<a class="card install-hint" href="?page=app" id="install-hint" hidden>' . View::icon('phone')
-       . '<span><strong>nooky als App</strong><span class="muted small">Aufs Handy holen und Benachrichtigungen bekommen</span></span></a>';
     echo '<h1>Chats</h1>';
     echo '<div id="chatlist">' . View::chatList($chats, (int) Auth::id()) . '</div>';
     echo '</main>';
@@ -395,7 +388,7 @@ function render_chat(array $chat): void
        . '<p class="hint" id="del-hint"></p>'
        . '<button type="button" data-close>Abbrechen</button></div></dialog>';
     echo '<dialog id="viewer"><div class="viewer"><img alt="Foto" id="viewer-img"><button class="iconbtn close" type="button" data-close aria-label="Schließen">' . View::icon('close') . '</button></div></dialog>';
-    echo '<template id="tpl-ticks">' . View::icon('ticks') . '</template><template id="tpl-tick">' . View::icon('tick') . '</template>';
+    echo '<template id="tpl-ticks">' . View::icon('ticks') . '</template>';
     echo '</body></html>';
 }
 
@@ -431,44 +424,8 @@ function render_profile(array $u, ?array $flash): void
     echo '</div><button class="btn" type="submit">Speichern</button></form>';
 
     echo '<div class="card"><div class="field-row">' . View::icon('at') . '<div class="f"><div class="k">Benutzername</div><div class="v">@' . e($u['username']) . '</div></div></div>';
-    echo '<div class="field-row">' . View::icon('bell') . '<div class="f"><div class="k">App &amp; Benachrichtigungen</div><div class="v"><a href="?page=app">Auf dem Handy installieren, Push einschalten</a></div></div></div>';
     echo '<div class="field-row">' . View::icon('shield') . '<div class="f"><div class="k">Sicherheit</div><div class="v"><a href="?page=password">Passwort ändern</a></div></div></div></div>';
     echo '</main>';
-    View::foot();
-}
-
-function render_app(): void
-{
-    View::head('App');
-    echo '<main class="page" id="app-page">';
-    echo '<h1>nooky aufs Handy</h1>';
-
-    // Installieren – app.js blendet den passenden Teil ein.
-    echo '<section class="card"><h2>' . View::icon('phone') . ' Als App installieren</h2>';
-    echo '<p class="muted">Kein Store, keine Warnung: nooky landet mit eigenem Icon auf deinem Homescreen und öffnet sich ohne Browserleiste.</p>';
-    echo '<div data-os="installed" hidden><p class="ok"><strong>✓ Läuft schon als App.</strong></p></div>';
-    echo '<div data-os="prompt" hidden><button class="btn block" type="button" id="install-btn">' . View::icon('addbox') . ' App installieren</button></div>';
-    echo '<div data-os="ios" hidden><ol class="steps">'
-       . '<li>Öffne <strong>chat.nooky.cc</strong> in <strong>Safari</strong>.</li>'
-       . '<li>Tippe unten auf <span class="kbd">' . View::icon('share') . ' Teilen</span>.</li>'
-       . '<li>Scroll runter und tippe auf <span class="kbd">' . View::icon('addbox') . ' Zum Home-Bildschirm</span>.</li>'
-       . '<li>Oben rechts auf <strong>Hinzufügen</strong> – fertig.</li></ol>'
-       . '<p class="muted small">Danach nooky über das neue Icon öffnen und einmal anmelden.</p></div>';
-    echo '<div data-os="android" hidden><ol class="steps">'
-       . '<li>Öffne <strong>chat.nooky.cc</strong> in <strong>Chrome</strong>.</li>'
-       . '<li>Tippe oben rechts auf <span class="kbd">' . View::icon('dots') . '</span>.</li>'
-       . '<li>Tippe auf <strong>App installieren</strong> (oder „Zum Startbildschirm hinzufügen“).</li></ol></div>';
-    echo '<div data-os="desktop" hidden><p class="muted">Am Rechner: In Chrome oder Edge rechts in der Adressleiste auf das Installieren-Symbol klicken. Fürs Handy einfach <strong>chat.nooky.cc</strong> dort öffnen.</p></div>';
-    echo '</section>';
-
-    // Benachrichtigungen
-    echo '<section class="card"><h2>' . View::icon('bell') . ' Benachrichtigungen</h2>';
-    echo '<p class="muted">Bei neuen Nachrichten meldet sich nooky – auch wenn die App zu ist. Der Inhalt läuft dabei nicht über Apple oder Google: Die holt sich dein Handy direkt von nooky.</p>';
-    echo '<p id="push-status" class="small"></p>';
-    echo '<div class="actions-row"><button class="btn" type="button" id="push-on" hidden>' . View::icon('bell') . ' Einschalten</button>'
-       . '<button class="btn ghost" type="button" id="push-test" hidden>Test senden</button>'
-       . '<button class="btn ghost" type="button" id="push-off" hidden>Ausschalten</button></div>';
-    echo '</section></main>';
     View::foot();
 }
 

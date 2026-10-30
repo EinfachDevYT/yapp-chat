@@ -106,8 +106,8 @@ final class Db
             ALTER TABLE users ADD COLUMN logged_out_at INTEGER;
             SQL,
 
-        // Push-Benachrichtigungen: ein Eintrag pro Gerät/Browser.
-        // active_at = letzte Abfrage aus einer offenen App (dann kein Push nötig).
+        // Für spätere Push-Benachrichtigungen (Handy-App). Bleibt stehen, damit
+        // die Nummerierung auf Servern, die schon v4 haben, stimmt.
         4 => <<<'SQL'
             CREATE TABLE push_subscriptions (
                 id         INTEGER PRIMARY KEY,

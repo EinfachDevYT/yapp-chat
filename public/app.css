@@ -18,6 +18,9 @@
   --glow: linear-gradient(135deg, var(--ember), var(--peach));
   --on-glow: #2a120b;
   --mint: #5ee0b5;
+  --tick-read: #6aa8ff;          /* gelesen, auf dunklem Grund */
+  --tick-read-on-glow: #1238b5;  /* gelesen, auf der eigenen (Glut-)Blase */
+  --tick-sent-on-glow: rgba(42, 18, 11, .45);
   --danger: #ff5c7a;
   --bubble-in: #262438;
   --shadow: 0 18px 50px -24px rgba(0, 0, 0, .7);
@@ -37,6 +40,7 @@
     --peach: #ff9e70;
     --on-glow: #2a120b;
     --mint: #12a37a;
+    --tick-read: #1a6ae0;
     --danger: #d9284d;
     --bubble-in: #ffffff;
     --shadow: 0 18px 40px -24px rgba(60, 30, 20, .25);
@@ -143,8 +147,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .row .time.unread { color: var(--peach); font-weight: 700; }
 .row .bottom { display: flex; align-items: center; gap: 8px; }
 .row .preview { flex: 1; min-width: 0; color: var(--muted); font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .preview .tick { color: var(--muted); }
-.row .preview .tick.read { color: var(--mint); }
+.row .preview .tick { color: var(--muted); display: inline-block; vertical-align: -1px; }
+.row .preview .tick svg { width: 17px; height: 11px; stroke-width: 2.4; }
+.row .preview .tick.read { color: var(--tick-read); }
 .badge-count { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 99px; background: var(--glow); color: var(--on-glow); font: 700 12px/22px var(--body); text-align: center; }
 
 .empty { text-align: center; padding: 48px 16px; color: var(--muted); }
@@ -189,10 +194,11 @@ body.chat-view { overflow: hidden; }
 }
 .msg.in  .bubble { background: var(--bubble-in); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
 .msg.out .bubble { background: var(--glow); color: var(--on-glow); border-bottom-right-radius: 6px; }
-.bubble .meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: .7rem; opacity: .7; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.msg.out .bubble .meta { opacity: .8; }
-.tick svg { width: 16px; height: 11px; display: block; }
-.tick.read { color: #0b6b4f; }
+.bubble .meta { display: flex; justify-content: flex-end; align-items: center; gap: 5px; font-size: .72rem; opacity: .75; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.msg.out .bubble .meta { opacity: 1; color: rgba(42, 18, 11, .7); }
+.tick svg { width: 19px; height: 12px; display: block; stroke-width: 2.6; }
+.msg.out .tick { color: var(--tick-sent-on-glow); }
+.msg.out .tick.read { color: var(--tick-read-on-glow); }
 .msg.in .tick { display: none; }
 .bubble.photo { padding: 4px; }
 .bubble.photo img { display: block; border-radius: 16px; max-height: 360px; width: auto; height: auto; background: var(--surface-2); }
@@ -210,6 +216,11 @@ body.chat-view { overflow: hidden; }
   margin: 0; resize: none; max-height: 160px; min-height: 46px; line-height: 1.35; border-radius: 22px; padding: 12px 16px;
   background: var(--surface);
 }
+/* keine Scrollleiste/Pfeile im Eingabefeld, solange der Text reinpasst */
+.composer textarea { overflow-y: hidden; scrollbar-width: thin; }
+.composer textarea::-webkit-scrollbar { width: 6px; }
+.composer textarea::-webkit-scrollbar-button { display: none; height: 0; }
+.composer textarea::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
 .composer .send { width: 46px; height: 46px; flex: none; border-radius: 50%; border: 0; background: var(--glow); color: var(--on-glow); display: grid; place-items: center; cursor: pointer; }
 .composer .send svg, .composer .attach svg { width: 22px; height: 22px; }
 .composer .attach { width: 46px; height: 46px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--muted); margin: 0; }
@@ -276,13 +287,3 @@ th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: up
 .auth .brand-big span { font: 700 1.8rem/1 var(--display); letter-spacing: -.03em; }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
-
-/* ---- App installieren / Benachrichtigungen ------------------------------- */
-.install-hint { display: flex; align-items: center; gap: 14px; text-decoration: none; border-color: var(--peach); }
-.install-hint svg { width: 28px; height: 28px; color: var(--peach); flex: none; }
-.install-hint span { display: flex; flex-direction: column; }
-#app-page h2 { display: flex; align-items: center; gap: 10px; }
-#app-page h2 svg { width: 22px; height: 22px; color: var(--peach); }
-.steps { margin: 0 0 8px; padding-left: 22px; display: grid; gap: 10px; }
-.kbd { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; white-space: nowrap; }
-.kbd svg { width: 16px; height: 16px; }
