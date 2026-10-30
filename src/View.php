@@ -119,7 +119,7 @@ final class View
             }
             $unread = (int) $c['unread'];
             $html .= '<a class="row" href="?page=chat&amp;id=' . (int) $c['id'] . '">'
-                . self::avatar(['display_name' => $c['display_name'], 'avatar' => $c['avatar'], 'last_seen_at' => $c['last_seen_at']], '', true)
+                . self::avatar(['display_name' => $c['display_name'], 'avatar' => $c['avatar'], 'last_seen_at' => $c['last_seen_at'], 'logged_out_at' => $c['logged_out_at']], '', true)
                 . '<span class="main"><span class="top"><span class="name">' . self::e($c['display_name']) . '</span>'
                 . '<span class="time' . ($unread ? ' unread' : '') . '">' . ($c['last_message_at'] ? self::shortTime((int) $c['last_message_at']) : '') . '</span></span>'
                 . '<span class="bottom"><span class="preview">' . $preview . '</span>'

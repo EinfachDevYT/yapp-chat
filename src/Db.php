@@ -100,6 +100,11 @@ final class Db
             ALTER TABLE messages ADD COLUMN photo_h INTEGER;
             CREATE INDEX idx_messages_deleted ON messages(chat_id, deleted_at);
             SQL,
+
+        // Abmelden setzt sofort auf offline.
+        3 => <<<'SQL'
+            ALTER TABLE users ADD COLUMN logged_out_at INTEGER;
+            SQL,
     ];
 
     public static function path(): string

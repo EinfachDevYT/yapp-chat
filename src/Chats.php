@@ -51,7 +51,7 @@ final class Chats
         $pdo  = Db::pdo();
         $stmt = $pdo->prepare(
             'SELECT c.id, c.last_message_at, c.created_at,
-                    u.id AS other_id, u.username, u.display_name, u.avatar, u.last_seen_at, u.status,
+                    u.id AS other_id, u.username, u.display_name, u.avatar, u.last_seen_at, u.logged_out_at, u.status,
                     COALESCE(r.last_read_id, 0) AS last_read_id,
                     COALESCE((SELECT o.last_read_id FROM chat_reads o WHERE o.chat_id = c.id AND o.user_id = u.id), 0) AS other_read
              FROM chats c

@@ -204,7 +204,7 @@ final class Users
     public static function contactsFor(int $me): array
     {
         $stmt = Db::pdo()->prepare(
-            "SELECT id, username, display_name, avatar, bio, last_seen_at FROM users
+            "SELECT id, username, display_name, avatar, bio, last_seen_at, logged_out_at FROM users
              WHERE id != ? AND status = 'active' ORDER BY display_name COLLATE NOCASE"
         );
         $stmt->execute([$me]);
@@ -213,13 +213,21 @@ final class Users
 
     // ---- Online-Status --------------------------------------------------
 
-    /** Wer in den letzten 2 Minuten aktiv war, gilt als online. */
-    private const ONLINE_WINDOW = 120;
+    /**
+     * Online = in den letzten 75 s aktiv und seitdem nicht abgemeldet.
+     * Offene Seiten melden sich alle paar Sekunden (Polling), der Server
+     * schreibt das höchstens alle 30 s – nach dem Schließen ist man also
+     * nach spätestens gut einer Minute offline, nach dem Abmelden sofort.
+     */
+    public const ONLINE_WINDOW = 75;
 
     public static function isOnline(?array $user): bool
     {
-        return $user !== null && $user['last_seen_at'] !== null
-            && time() - (int) $user['last_seen_at'] < self::ONLINE_WINDOW;
+        if ($user === null || $user['last_seen_at'] === null) {
+            return false;
+        }
+        $seen = (int) $user['last_seen_at'];
+        return time() - $seen < self::ONLINE_WINDOW && $seen > (int) ($user['logged_out_at'] ?? 0);
     }
 
     /** „online“, „zuletzt online heute um 14:32“, „… gestern um …“, „… am 03.10.“ */

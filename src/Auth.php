@@ -17,7 +17,7 @@ final class Auth
     private const CSRF_COOKIE = 'nooky_csrf';        // nur für Gäste (Login-Formular)
 
     private const LIFETIME    = 30 * 86400;         // Sitzung läuft nach 30 Tagen Inaktivität ab
-    private const TOUCH_EVERY = 60;                 // last_seen höchstens einmal pro Minute schreiben
+    private const TOUCH_EVERY = 30;                 // last_seen höchstens alle 30 s schreiben
 
     private const FAIL_WINDOW    = 15 * 60;         // Zeitfenster für Fehlversuche
     private const MAX_FAILS_USER = 5;               // pro Benutzername + IP
@@ -140,7 +140,17 @@ final class Auth
     public static function logout(): void
     {
         if (self::$session !== null) {
-            Db::pdo()->prepare('DELETE FROM sessions WHERE id = ?')->execute([self::$session['id']]);
+            $pdo = Db::pdo();
+            $pdo->prepare('DELETE FROM sessions WHERE id = ?')->execute([self::$session['id']]);
+
+            // Sofort offline – außer auf einem anderen Gerät ist gerade noch jemand aktiv.
+            $now  = time();
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM sessions WHERE user_id = ? AND last_seen_at >= ?');
+            $stmt->execute([self::$session['user_id'], $now - Users::ONLINE_WINDOW]);
+            if ((int) $stmt->fetchColumn() === 0) {
+                $pdo->prepare('UPDATE users SET last_seen_at = ?, logged_out_at = ? WHERE id = ?')
+                    ->execute([$now, $now, self::$session['user_id']]);
+            }
         }
         self::clearCookie(self::COOKIE);
         self::$session = null;
@@ -240,7 +250,7 @@ final class Auth
             $now,
             $now + self::LIFETIME,
         ]);
-        $pdo->prepare('UPDATE users SET last_seen_at = ? WHERE id = ?')->execute([$now, $userId]);
+        $pdo->prepare('UPDATE users SET last_seen_at = ?, logged_out_at = NULL WHERE id = ?')->execute([$now, $userId]);
 
         self::setCookie(self::COOKIE, $token, $now + self::LIFETIME);
         self::clearCookie(self::CSRF_COOKIE);
