@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Yapp\Chat;
+namespace Nooky\Chat;
 
 use PDO;
 

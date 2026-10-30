@@ -57,20 +57,20 @@ apt update && apt install -y nginx php8.4-fpm php8.4-sqlite3 php8.4-curl php8.4-
 ### A1. Code holen
 
 ```bash
-git clone https://github.com/EinfachDevYT/yapp-license /var/www/yapp-license
+git clone https://github.com/EinfachDevYT/yapp-license /var/www/nooky-license
 ```
 
 ### A2. Setup: Schlüsselpaar + Panel-Login
 
 ```bash
-php /var/www/yapp-license/bin/setup.php
+php /var/www/nooky-license/bin/setup.php
 ```
 
 - Fragt Benutzername + Passwort fürs **Panel des Lizenzservers** ab.
 - Gibt am Ende den **PUBLIC KEY** aus (lange Base64-Zeichenkette).
   👉 **Notieren** – kommt in B3 in die `config.php` des Chats.
   Später wieder anzeigen:
-  `grep '"public"' /var/www/yapp-license/data/keys.json`
+  `grep '"public"' /var/www/nooky-license/data/keys.json`
 
 ### A3. Rechte setzen
 
@@ -78,23 +78,23 @@ php /var/www/yapp-license/bin/setup.php
 PHP läuft als `www-data` und muss sie lesen können:
 
 ```bash
-chown -R root:root /var/www/yapp-license
+chown -R root:root /var/www/nooky-license
 ```
 
 ```bash
-chown -R www-data:www-data /var/www/yapp-license/data && chmod 700 /var/www/yapp-license/data
+chown -R www-data:www-data /var/www/nooky-license/data && chmod 700 /var/www/nooky-license/data
 ```
 
 ### A4. nginx
 
 ```bash
-cat > /etc/nginx/sites-available/yapp-license <<'EOF'
+cat > /etc/nginx/sites-available/nooky-license <<'EOF'
 server {
     listen 80;
     listen [::]:80;
     server_name lizenz.example.de;
 
-    root /var/www/yapp-license/public;
+    root /var/www/nooky-license/public;
     index index.php;
 
     location / {
@@ -116,7 +116,7 @@ EOF
 👉 In der Datei `server_name` auf deine Lizenz-Domain ändern.
 
 ```bash
-ln -s /etc/nginx/sites-available/yapp-license /etc/nginx/sites-enabled/ && rm -f /etc/nginx/sites-enabled/default
+ln -s /etc/nginx/sites-available/nooky-license /etc/nginx/sites-enabled/ && rm -f /etc/nginx/sites-enabled/default
 ```
 
 ```bash
@@ -157,19 +157,19 @@ Erwartet: `{"valid":false,"reason":"bad_request",…}` – das ist **richtig**
 ### B1. Code holen
 
 ```bash
-git clone https://github.com/EinfachDevYT/yapp-chat /var/www/yapp-chat
+git clone https://github.com/EinfachDevYT/yapp-chat /var/www/nooky-chat
 ```
 
 ### B2. Config anlegen
 
 ```bash
-cp /var/www/yapp-chat/config.example.php /var/www/yapp-chat/config.php
+cp /var/www/nooky-chat/config.example.php /var/www/nooky-chat/config.php
 ```
 
 ### B3. Config ausfüllen – hier kommen die Werte aus Teil A rein
 
 ```bash
-nano /var/www/yapp-chat/config.php
+nano /var/www/nooky-chat/config.php
 ```
 
 ```php
@@ -186,7 +186,7 @@ return [
 ### B4. Datenbank + ersten Chat-Admin anlegen
 
 ```bash
-php /var/www/yapp-chat/bin/setup.php
+php /var/www/nooky-chat/bin/setup.php
 ```
 
 Fragt Benutzername, Anzeigename und Passwort für den **Admin im Chat** ab.
@@ -195,27 +195,27 @@ Fragt Benutzername, Anzeigename und Passwort für den **Admin im Chat** ab.
 ### B5. Rechte setzen
 
 ```bash
-chown -R root:root /var/www/yapp-chat
+chown -R root:root /var/www/nooky-chat
 ```
 
 ```bash
-chown -R www-data:www-data /var/www/yapp-chat/data
+chown -R www-data:www-data /var/www/nooky-chat/data
 ```
 
 ```bash
-chown root:www-data /var/www/yapp-chat/config.php && chmod 640 /var/www/yapp-chat/config.php
+chown root:www-data /var/www/nooky-chat/config.php && chmod 640 /var/www/nooky-chat/config.php
 ```
 
 ### B6. nginx
 
 ```bash
-cat > /etc/nginx/sites-available/yapp-chat <<'EOF'
+cat > /etc/nginx/sites-available/nooky-chat <<'EOF'
 server {
     listen 80;
     listen [::]:80;
     server_name chat.example.de;
 
-    root /var/www/yapp-chat/public;
+    root /var/www/nooky-chat/public;
     index index.php;
 
     client_max_body_size 10m;   # Foto-Uploads
@@ -239,7 +239,7 @@ EOF
 👉 In der Datei `server_name` auf deine Chat-Domain ändern.
 
 ```bash
-ln -s /etc/nginx/sites-available/yapp-chat /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/nooky-chat /etc/nginx/sites-enabled/
 ```
 
 ```bash
@@ -255,7 +255,7 @@ certbot --nginx -d chat.example.de
 ### B8. Lizenz testen (erste Verbindung Chat → Lizenzserver)
 
 ```bash
-sudo -u www-data php /var/www/yapp-chat/bin/license-check.php
+sudo -u www-data php /var/www/nooky-chat/bin/license-check.php
 ```
 
 Erwartet: `Lizenz: ok`. Im Panel des Lizenzservers steht der Key jetzt auf
@@ -266,7 +266,7 @@ Bei `blocked` siehe [Fehlersuche](#fehlersuche).
 ### B9. Stündliche Prüfung per Cron
 
 ```bash
-echo '0 * * * * www-data php /var/www/yapp-chat/bin/license-check.php >/dev/null 2>&1' > /etc/cron.d/yapp-chat
+echo '0 * * * * www-data php /var/www/nooky-chat/bin/license-check.php >/dev/null 2>&1' > /etc/cron.d/nooky-chat
 ```
 
 ### B10. Loslegen
@@ -301,8 +301,8 @@ echo '0 * * * * www-data php /var/www/yapp-chat/bin/license-check.php >/dev/null
 - [ ] Chat: Setup gelaufen, `data/` gehört `www-data`
 - [ ] Chat: HTTPS aktiv
 - [ ] `license-check.php` meldet `ok`
-- [ ] Cron-Datei `/etc/cron.d/yapp-chat` angelegt
-- [ ] Backup von `/var/www/yapp-license/data` gemacht
+- [ ] Cron-Datei `/etc/cron.d/nooky-chat` angelegt
+- [ ] Backup von `/var/www/nooky-license/data` gemacht
 
 ## Fehlersuche
 
@@ -318,12 +318,12 @@ echo '0 * * * * www-data php /var/www/yapp-chat/bin/license-check.php >/dev/null
 
 ## Backup
 
-**Wichtigste Datei überhaupt:** `/var/www/yapp-license/data/keys.json`
+**Wichtigste Datei überhaupt:** `/var/www/nooky-license/data/keys.json`
 (privater Schlüssel). Geht sie verloren, sperren sich nach spätestens
 12 h alle Chats, bis überall ein neuer Public Key eingetragen ist.
 
 ```bash
-tar czf /root/yapp-backup-$(date +%F).tar.gz /var/www/yapp-license/data /var/www/yapp-chat/data /var/www/yapp-chat/config.php
+tar czf /root/nooky-backup-$(date +%F).tar.gz /var/www/nooky-license/data /var/www/nooky-chat/data /var/www/nooky-chat/config.php
 ```
 
 Backup vom Server herunterladen und sicher aufbewahren.
@@ -335,13 +335,13 @@ erzeugt ein neues Schlüsselpaar und macht alle Lizenzen ungültig.
 Chat-Admin:
 
 ```bash
-sudo -u www-data php /var/www/yapp-chat/bin/setup.php
+sudo -u www-data php /var/www/nooky-chat/bin/setup.php
 ```
 
 Panel des Lizenzservers:
 
 ```bash
-sudo -u www-data php /var/www/yapp-license/bin/setup.php
+sudo -u www-data php /var/www/nooky-license/bin/setup.php
 ```
 
 Jeweils denselben Benutzernamen eingeben → Passwort wird neu gesetzt.
@@ -351,7 +351,7 @@ wieder root (dann A3 bzw. B5 wiederholen).
 ## Updates
 
 ```bash
-git -C /var/www/yapp-license pull && git -C /var/www/yapp-chat pull
+git -C /var/www/nooky-license pull && git -C /var/www/nooky-chat pull
 ```
 
 Datenbank-Änderungen werden beim nächsten Seitenaufruf automatisch

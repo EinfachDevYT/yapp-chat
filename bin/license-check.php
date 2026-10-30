@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Stündliche Lizenzprüfung per Cron – hält die Offline-Toleranz frisch,
  * auch wenn gerade niemand den Chat benutzt.
  *
- *   0 * * * * php /var/www/yapp-chat/bin/license-check.php
+ *   0 * * * * php /var/www/nooky-chat/bin/license-check.php
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -22,10 +22,10 @@ if (!is_file($configFile)) {
 require dirname(__DIR__) . '/src/License.php';
 
 $cfg     = require $configFile;
-$license = new Yapp\Chat\License($cfg['license'] ?? []);
+$license = new Nooky\Chat\License($cfg['license'] ?? []);
 
 $reason = null;
 $status = $license->check($reason);
 
 fwrite(STDOUT, date('c') . "  Lizenz: {$status}" . ($reason ? " ({$reason})" : '') . "\n");
-exit($status === Yapp\Chat\License::OK ? 0 : 1);
+exit($status === Nooky\Chat\License::OK ? 0 : 1);

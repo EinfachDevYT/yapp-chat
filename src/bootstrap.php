@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 
 spl_autoload_register(static function (string $class): void {
-    $prefix = 'Yapp\\Chat\\';
+    $prefix = 'Nooky\\Chat\\';
     if (str_starts_with($class, $prefix)) {
         $file = __DIR__ . '/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
         if (is_file($file)) {
@@ -29,4 +29,4 @@ header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 header('Cache-Control: no-store');
 
-Yapp\Chat\Auth::boot();
+Nooky\Chat\Auth::boot();

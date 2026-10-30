@@ -1,7 +1,7 @@
-# yapp-chat
+# nooky-chat
 
 Selbstgehosteter 1:1-Chat. PHP 8.4, SQLite, nginx, kein Framework.
-Design „yapp" (dark, Lime + Violett/Pink) für 14–25-Jährige.
+Design „nooky" (dark, Lime + Violett/Pink) für 14–25-Jährige.
 
 > Open Source. Die Lizenzprüfung ist bewusst offen und lesbar – ihre
 > Sicherheit liegt nicht im Verstecken, sondern darin, dass gültige Tokens
@@ -51,7 +51,7 @@ ausgesperrt hat.
 - Admins können Passwörter zurücksetzen, Accounts sperren und entsperren,
   Admin-Rechte vergeben und entziehen sowie Accounts löschen. Der letzte
   aktive Admin ist dabei geschützt.
-- Sitzungen liegen in der DB (Cookie `yapp_sid`, HttpOnly, SameSite=Lax,
+- Sitzungen liegen in der DB (Cookie `nooky_sid`, HttpOnly, SameSite=Lax,
   30 Tage gleitend). Sperren oder ein Passwort-Reset melden den User sofort
   auf allen Geräten ab.
 - Nach 5 Fehlversuchen pro Name+IP bzw. 20 pro IP gibt es eine Pause von
@@ -70,7 +70,7 @@ ausgesperrt hat.
 Stündlicher Cron-Check (hält die Toleranz auch ohne Traffic frisch):
 
 ```cron
-0 * * * * php /var/www/yapp-chat/bin/license-check.php
+0 * * * * php /var/www/nooky-chat/bin/license-check.php
 ```
 
 ## Status
@@ -81,5 +81,5 @@ Stündlicher Cron-Check (hält die Toleranz auch ohne Traffic frisch):
 - [ ] Chats, Fotos, Löschen (für mich / für alle, 48 h)
 - [ ] Lesebestätigung, zuletzt online
 - [ ] Profilbild, Bio
-- [ ] yapp-Design (Bricolage + Onest, selbst gehostet)
+- [ ] nooky-Design (Bricolage + Onest, selbst gehostet)
 - [ ] Lizenzprüfung in `src/bootstrap.php` einhängen (bei `blocked` Sperrseite)

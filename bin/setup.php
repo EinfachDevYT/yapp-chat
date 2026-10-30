@@ -22,8 +22,8 @@ if (PHP_SAPI !== 'cli') {
 require dirname(__DIR__) . '/src/Db.php';
 require dirname(__DIR__) . '/src/Users.php';
 
-use Yapp\Chat\Db;
-use Yapp\Chat\Users;
+use Nooky\Chat\Db;
+use Nooky\Chat\Users;
 
 function prompt(string $label, bool $hidden = false): string
 {
@@ -39,7 +39,7 @@ function prompt(string $label, bool $hidden = false): string
     return $value;
 }
 
-echo "== yapp-chat Setup ==\n\n";
+echo "== nooky-chat Setup ==\n\n";
 
 $dataDir = dirname(__DIR__) . '/data';
 if (!is_writable($dataDir)) {

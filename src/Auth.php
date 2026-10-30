@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Yapp\Chat;
+namespace Nooky\Chat;
 
 /**
  * Login, Sitzungen und CSRF-Schutz.
@@ -13,8 +13,8 @@ namespace Yapp\Chat;
  */
 final class Auth
 {
-    private const COOKIE      = 'yapp_sid';
-    private const CSRF_COOKIE = 'yapp_csrf';        // nur für Gäste (Login-Formular)
+    private const COOKIE      = 'nooky_sid';
+    private const CSRF_COOKIE = 'nooky_csrf';        // nur für Gäste (Login-Formular)
 
     private const LIFETIME    = 30 * 86400;         // Sitzung läuft nach 30 Tagen Inaktivität ab
     private const TOUCH_EVERY = 60;                 // last_seen höchstens einmal pro Minute schreiben

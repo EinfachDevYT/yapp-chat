@@ -8,8 +8,8 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/src/bootstrap.php';
 
-use Yapp\Chat\Auth;
-use Yapp\Chat\Users;
+use Nooky\Chat\Auth;
+use Nooky\Chat\Users;
 
 $page   = is_string($_GET['page'] ?? null) ? $_GET['page'] : 'home';
 $isPost = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
@@ -205,9 +205,9 @@ function layout_head(string $title): void
 {
     echo '<!doctype html><html lang="de"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
-    echo '<title>' . e($title) . ' · yapp</title>';
+    echo '<title>' . e($title) . ' · nooky</title>';
     echo '<link rel="stylesheet" href="app.css"><script src="app.js" defer></script>';
-    echo '</head><body><header><div class="brand">yapp</div><nav>';
+    echo '</head><body><header><div class="brand">nooky</div><nav>';
     if (Auth::check() && !Auth::mustChangePassword()) {
         echo '<a href="?page=home">Chats</a>';
         if (Auth::isAdmin()) {

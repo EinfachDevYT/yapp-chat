@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Yapp\Chat;
+namespace Nooky\Chat;
 
 /**
  * Accounts. Neue User legt ausschließlich ein Admin an (Admin-Seite oder
